@@ -1,4 +1,4 @@
-from utils.utils import hash256
+from utils import hash256
 
 
 class BlockHeader:

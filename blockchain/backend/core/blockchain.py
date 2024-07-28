@@ -1,7 +1,7 @@
 from block import Block
 from blockheader import BlockHeader
 from database.database import BlockchainDB
-from utils.utils import hash256
+from tx import CoinbaseTx
 import time
 
 
@@ -27,12 +27,13 @@ class Blockchain:
 
     def add_block(self, block_height, previous_block_hash):
         timestamp = int(time.time())
-        transaction = f"Codies alert sent {block_height}"
-        merkle_root = hash256(transaction.encode()).hex()
+        coinbase_instance = CoinbaseTx(block_height)
+        coinbase_tx = coinbase_instance.coinbase_transaction().to_dict()
+        merkle_root = ' '
         bits = "ffff001f"
         block_header = BlockHeader(VERSION, previous_block_hash, merkle_root, timestamp, bits)
         block_header.mine()
-        self.save_data([Block(block_height, 1, block_header.__dict__, 1, transaction).__dict__])
+        self.save_data([Block(block_height, 1, block_header.__dict__, 1, coinbase_tx).__dict__])
 
     def main(self):
         while True:
