@@ -3,7 +3,9 @@ from utils import (
     int_to_little_endian,
     little_endian_to_int,
     bytes_needed,
-    decode_base58
+    decode_base58,
+    encode_variant,
+    hash256
 )
 
 
@@ -30,7 +32,9 @@ class CoinbaseTx:
         target_script = Script.p2pkh_script(target_160)
         tx_outs.append(TxOut(amount=target_amount, script_pubkey=target_script))
 
-        return Tx(1, tx_ins, tx_outs, 0)
+        coinbase_tx = Tx(1, tx_ins, tx_outs, 0)
+
+        return coinbase_tx
 
 class Tx:
     def __init__(self, version, tx_ins, tx_outs, locktime):
@@ -38,6 +42,29 @@ class Tx:
         self.tx_ins = tx_ins
         self.tx_outs = tx_outs
         self.locktime = locktime
+        self.tx_id = self.id()
+
+    def id(self):
+        return self.hash().hex()
+
+    def hash(self):
+        return hash256(self.serialize())[::-1]
+
+    def serialize(self):
+        result = int_to_little_endian(self.version, 4)
+        result += encode_variant(len(self.tx_ins))
+
+        for tx_in in self.tx_ins:
+            result += tx_in.serialize()
+
+        result += encode_variant(len(self.tx_outs))
+
+        for tx_out in self.tx_outs:
+            result += tx_out.serialize()
+
+        result += int_to_little_endian(self.locktime, 4)
+
+        return result
 
     def is_coinbase(self):
         if len(self.tx_ins) != 1:
@@ -75,8 +102,20 @@ class TxIn:
         self.script_sig = script_sig if script_sig else Script()
         self.sequence = sequence
 
+    def serialize(self):
+        result = self.prev_tx[::-1]
+        result += int_to_little_endian(self.prev_index, 4)
+        result += self.script_sig.serialize()
+        result += int_to_little_endian(self.sequence, 4)
+        return result
+
 
 class TxOut:
     def __init__(self, amount, script_pubkey):
         self.amount = amount
         self.script_pubkey = script_pubkey
+
+    def serialize(self):
+        result = int_to_little_endian(self.amount, 8)
+        result += self.script_pubkey.serialize()
+        return result

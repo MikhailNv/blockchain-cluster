@@ -5,12 +5,16 @@ import sys
 
 class BaseDB:
     def __init__(self):
-        self.base_path = "data"
+        root_folder = "blockchain-cluster"
+        path = os.getcwd()
+        main_folder = path[:int(path.find("blockchain-cluster")) + len(root_folder)]
+
+        self.base_path = '/'.join((main_folder, "data"))
         self.file_path = '/'.join((self.base_path, self.file_name))
 
     def read(self):
         if not os.path.exists(self.file_path):
-            os.mkdir(os.path.dirname(self.file_path))
+            os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
             open(self.file_path, 'w')
 
         with open(self.file_path, "r") as f:
@@ -43,3 +47,9 @@ class BlockchainDB(BaseDB):
 
         if data:
             return data[-1]
+
+
+class AccountDB(BaseDB):
+    def __init__(self):
+        self.file_name = "account"
+        super().__init__()

@@ -1,5 +1,8 @@
-from blockchain.backend.core.elleptic_curve.elleptic_curve import Sha256Point
-from blockchain.backend.core.utils import hash160, hash256
+import sys
+
+from core.elleptic_curve.elleptic_curve import Sha256Point, BASE58_ALPHABET
+from core.utils import hash160, hash256
+from core.database.database import AccountDB
 import secrets
 
 
@@ -28,7 +31,6 @@ class Account:
         checksum = hash256(new_address)[:4]
         new_address = new_address + checksum
 
-        BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
         count = 0
         for zero in new_address:
             if zero == 0:
@@ -44,6 +46,8 @@ class Account:
             result = BASE58_ALPHABET[mod] + result
 
         public_address = prefix + result
+        setattr(self, "private_key", private_key)
+        setattr(self, "public_address", public_address)
         print("PRIVATE_KEY: ", private_key)
         print("PUBLIC_KEY: ", public_address)
 
@@ -51,3 +55,4 @@ class Account:
 if __name__ == "__main__":
     account = Account()
     account.create_keys()
+    AccountDB().write([account.__dict__])

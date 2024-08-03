@@ -10,7 +10,7 @@ VERSION = 1
 
 class Blockchain:
     def __init__(self):
-        self.genesis_block()
+        pass
 
     def save_data(self, block):
         blockchain_db = BlockchainDB()
@@ -28,14 +28,18 @@ class Blockchain:
     def add_block(self, block_height, previous_block_hash):
         timestamp = int(time.time())
         coinbase_instance = CoinbaseTx(block_height)
-        coinbase_tx = coinbase_instance.coinbase_transaction().to_dict()
-        merkle_root = ' '
+        coinbase_tx = coinbase_instance.coinbase_transaction()
+        merkle_root = coinbase_tx.tx_id
         bits = "ffff001f"
         block_header = BlockHeader(VERSION, previous_block_hash, merkle_root, timestamp, bits)
         block_header.mine()
-        self.save_data([Block(block_height, 1, block_header.__dict__, 1, coinbase_tx).__dict__])
+        print(f"блок {block_height} был успешно добыт со значением nonce {block_header}")
+        self.save_data([Block(block_height, 1, block_header.__dict__, 1, coinbase_tx.to_dict()).__dict__])
 
     def main(self):
+        last_block = self.fetch_last_block()
+        if last_block is None:
+            self.genesis_block()
         while True:
             last_block = self.fetch_last_block()
             block_height = last_block["height"] + 1

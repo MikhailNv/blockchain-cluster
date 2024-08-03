@@ -23,4 +23,3 @@ class BlockHeader:
             ).encode()
             self.block_hash = hash256(concatenate_string).hex()
             self.nonce += 1
-            print(f"Старт майнининга: {self.nonce}")

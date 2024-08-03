@@ -2,7 +2,8 @@ import hashlib
 from Crypto.Hash import RIPEMD160
 from hashlib import sha256
 from math import log
-from elleptic_curve.elleptic_curve import BASE58_ALPHABET
+
+from src.backend.core.elleptic_curve import BASE58_ALPHABET
 
 
 def hash256(string):
@@ -44,3 +45,16 @@ def decode_base58(s):
     if hash256(combined[:-4])[:4] != checksum:
         raise ValueError(f"Incorrect address {checksum} {hash256(combined[:-4])[:4]}")
     return combined[1:-4]
+
+
+def encode_variant(i):
+    if i < 0xfd:
+        return bytes([i])
+    elif i < 0x10000:
+        return b'\xfd' + int_to_little_endian(i, 2)
+    elif i < 0x100000000:
+        return b'\xfe' + int_to_little_endian(i, 4)
+    elif i < 0x10000000000000000:
+        return b'\xff' + int_to_little_endian(i, 8)
+    else:
+        raise ValueError(f"Число {i} типа integer слишком велико")
