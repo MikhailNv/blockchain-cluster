@@ -2,6 +2,7 @@ from core.utils import decode_base58
 from core.script import Script
 from core.tx import TxIn, TxOut, Tx
 from core.database.database import AccountDB
+from core.elleptic_curve.elleptic_curve import PrivateKey
 import time
 
 class SendBTC:
@@ -19,8 +20,7 @@ class SendBTC:
         self.change_amount = 0
         self.from_address_script_pubkey = None
         self.from_pubkey_hash = None
-        # self.tx_ins = []
-        # self.tx_outs = []
+        self.is_balance_enough = True
 
     def get_private_key(self):
         all_accounts = AccountDB().read()
@@ -32,6 +32,7 @@ class SendBTC:
         h160 = decode_base58(public_address)
         script_pubkey = Script().p2pkh_script(h160)
         return script_pubkey
+
     def prepare_tx_in(self):
         tx_ins = []
 
@@ -74,10 +75,18 @@ class SendBTC:
         tx_outs.append(TxOut(self.change_amount, self.from_address_script_pubkey))
         return tx_outs
 
-    def sign_tx(self):
-        pass
+    def sign_tx(self, tx_ins, tx_obj):
+        secret = self.get_private_key()
+        priv = PrivateKey(secret=secret)
+        for index, value in enumerate(tx_ins):
+            tx_obj.sign_input(index, priv, self.from_address_script_pubkey)
+        return True
 
     def prepare_transaction(self):
         tx_ins = self.prepare_tx_in()
-        tx_outs = self.prepare_tx_out()
-        tx_obj = Tx(1, tx_ins, tx_outs, 0)
+        if self.is_balance_enough:
+            tx_outs = self.prepare_tx_out()
+            tx_obj = Tx(1, tx_ins, tx_outs, 0)
+            self.sign_tx(tx_ins, tx_obj)
+            return True
+        return False
